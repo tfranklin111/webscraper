@@ -1,0 +1,58 @@
+from bs4 import BeautifulSoup
+import requests
+import json
+import os
+
+
+def fetch_info(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+
+        soup = BeautifulSoup(response.text, 'html.parser')
+        # Fetch paragraphs
+        p_tags = soup.find_all('p')
+        # Fetch list items, not just ordered lists (changed from 'ol' to 'li')
+        ol_tags = soup.find_all('ol')
+        h2_tags = soup.find_all('h2')
+        h3_tags = soup.find_all('h3')
+
+        # Combine texts from paragraphs and list items, ensuring unique entries if needed
+        texts = []
+        for tag in p_tags + ol_tags + h2_tags + h3_tags:
+            if tag.get_text(strip=True):
+                texts.append(tag.get_text(strip=True))
+
+        return texts
+
+    except requests.HTTPError as e:
+        print(f"HTTP error occurred: {e}")
+    except Exception as e:
+        print(f"Other error occurred: {e}")
+    return []
+
+
+def scrape_multiple_urls(urls):
+    all_data = {}
+    for url in urls:
+        data = fetch_info(url)
+        if data:
+            all_data[url] = data
+        else:
+            print(f"No data found for {url}")
+    return all_data
+
+
+# URLs to scrape
+urls = [
+
+]
+
+data = scrape_multiple_urls(urls)
+
+# Save to a file in the script's directory for simplicity
+file_path = 'extracted_data.json'
+with open(file_path, 'w') as file:
+    json.dump(data, file, indent=4)
+
+print(f"Data saved to {file_path}")
